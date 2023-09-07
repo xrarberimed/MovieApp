@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'black'
     },
     platform: {
-        flex: 1
+        //flex: 1
     },
     ust: {
         flexDirection: 'row',

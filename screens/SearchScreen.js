@@ -1,9 +1,12 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, TouchableWithoutFeedback, Dimensions, StyleSheet} from "react-native";
 import { XMarkIcon } from "react-native-heroicons/outline";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Loading from "../components/loading";
+import { value } from "deprecated-react-native-prop-types/DeprecatedTextInputPropTypes";
+import { debounce } from 'lodash';
+import { fallbackMoviePoster, image185, searchMovies } from "../api/movieData";
 
 const {width, height} = Dimensions.get('window');
 
@@ -12,10 +15,28 @@ export default function SearchScreen() {
     const [results, setResults] = useState([1,2,3,4]);
     const [loading, setLoading] = useState(false);
     let movieName = 'Ant-Man and the Wasp:';
+    const handleSearch = value => {
+        if(value && value.length>2){
+            setLoading(true);
+            searchMovies({
+                query: value, include_adult: false, language: 'en-US', page: '1'
+            }).then(data => {
+                console.log('got search results');
+                setLoading(false);
+                if(data && data.results) setResults(data.results);
+            })
+        }else {
+            setLoading(false);
+            setResults([])
+        }
+    }
+
+    const handleTextDebounce = useCallback(debounce(handleSearch, 400), []);
     return(
         <SafeAreaView style={styles.safeAreaView}>
             <View style={styles.inputContainer}>
                 <TextInput
+                onChangeText={handleTextDebounce}
                 placeholder="Search Movie"
                 placeholderTextColor={'lightgray'}
                 style={styles.textInput}
@@ -48,13 +69,13 @@ export default function SearchScreen() {
                                             >
                                                 <View style={styles.movieContent}>
                                                     <Image
-                                                    source={require('../assets/images/moviePoster2.png')}
+                                                    //source={require('../assets/images/moviePoster2.png')}
+                                                    source={{uri: image185(item?.poster_path) || fallbackMoviePoster}}
                                                     style={styles.image}
                                                     />
                                                     <Text style={styles.movieTitle}>
                                                         {
-                                                            movieName.length > 22 ? movieName.slice(0.22)+'...': movieName
-                                                        }
+                                                            item?.title?.length>22? item?.title.slice(0,22)+'...': item?.title                                                     }
                                                     </Text>
                                                 </View>
                                             </TouchableWithoutFeedback>

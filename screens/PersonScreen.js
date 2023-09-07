@@ -1,18 +1,44 @@
-import { useNavigation } from "@react-navigation/native";
-import React, { useState } from "react";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
 import { View, Text, Image, TouchableOpacity, Platform, Dimensions,ScrollView, StyleSheet, SafeAreaView } from "react-native";
 import { ChevronLeftIcon } from 'react-native-heroicons/outline';
 import { HeartIcon } from 'react-native-heroicons/solid';
 import MovieList from "../components/movieList";
 import Loading from "../components/loading";
+import { fallbackPersonImage, fetchPersonDetails, image342 } from "../api/movieData";
 
 var {width, height} = Dimensions.get('window');
 
 export default function PersonScreen() {
+    const {params: item} = useRoute();
     const navigation = useNavigation();
     const [isFavourite, toggleFavourite] = useState(false);
     const [personMovies, setPersonMovies] = useState([1,2,3,4]);
+    const [person, setPerson] = useState({})
     const [loading, setLoading] = useState(false);
+    useEffect(()=> {
+        setLoading(false);
+        //console.log("person: ", item);
+        getPersonDetails(item.id)
+        getPersonMovies(item.id)
+
+    },[item])
+
+    const getPersonDetails = async id => {
+        const data = await fetchPersonDetails(id);
+        //console.log('got person details: ', data);
+        if(data) setPerson(data);
+        setLoading(false);
+    }
+
+    const getPersonMovies = async id=>{
+        const data = await fetchPersonMovies(id);
+        console.log('got person movies')
+        if(data && data.cast){
+            setPersonMovies(data.cast);
+        }
+
+    }
 
     return (
        <ScrollView style={styles.scroll}
@@ -33,16 +59,22 @@ export default function PersonScreen() {
                         <View>
                         <View style={styles.personDet}>
                     <View style={styles.imgContainer}>
-                        <Image source={require('../assets/images/castImage2.png')}
+                        <Image 
+                        //source={require('../assets/images/castImage2.png')}
+                        source={{uri: image342(person?.profile_path) || fallbackPersonImage}}
                         style={styles.image} />
                     </View>
                 </View>
                 <View style={styles.bilgiler}>
                     <Text style={styles.name}>
-                        Keanu Reeves
+                        {
+                            person?.name
+                        }
                     </Text>
                     <Text style={styles.placeOfBirth}>
-                        Beirut, Lebanon
+                        {
+                            person?.place_of_birth
+                        }
                     </Text>
                 </View>
 
@@ -51,25 +83,29 @@ export default function PersonScreen() {
                         <View style={styles.infoItem}>
                             <Text style={styles.infoLabel}>Gender</Text>
                             <Text style={styles.infoValue}>
-                                Male
+                                {
+                                    person?.gender==1? 'Female': 'Male'
+                                }
                             </Text>
                         </View>
                         <View style={styles.infoItem}>
                         <Text style={styles.infoLabel}>Birthday</Text>
                             <Text style={styles.infoValue}>
-                                02-09-1964
+                                {
+                                    person?.birthday
+                                }
                             </Text>
                         </View>
                         <View style={styles.infoItem}>
                         <Text style={styles.infoLabel}>Known For</Text>
                             <Text style={styles.infoValue}>
-                                Acting
+                                {person?.known_for_department}
                             </Text>
                         </View>
                         <View style={styles.infoItem}>
                         <Text style={styles.infoLabel}>Popularity</Text>
                             <Text style={styles.infoValue}>
-                                %84
+                                {person?.popularity?.toFixed(2)}%
                             </Text>
                         </View>
                     </View>
@@ -78,7 +114,9 @@ export default function PersonScreen() {
                 <View style={styles.bio}>
                     <Text style={styles.title}>Biography</Text>
                     <Text style={styles.bioText}>
-                    Keanu Charles Reeves (d. 2 Eylül 1964, Lübnan), Kanadalı aktör, yapımcı, yönetmen ve müzisyen. Adının anlamı "Dağlardan esen rüzgâr"dır. Annesi ile babası Beyrut'ta bir gece kulübünde tanışmışlardır. Annesi İngiliz, babası Çin asıllı bir Hawaiilidir. Ancak kendisini Kanada'da büyüdüğü için Kanadalı saymaktadır. 3 ülkenin vatandaşlığına sahiptir. Ayrıca yapımcılığını CD Projekt Red'in üstlendiği Cyberpunk 2077 isimli oyunda Johnny Silverhand karakterini canlandırmıştır.
+                    {
+                        person?.biography || 'N/A'
+                    }
                     </Text>
                 </View>
 
